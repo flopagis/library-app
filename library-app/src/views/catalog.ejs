@@ -1,0 +1,69 @@
+<%
+function buildQuery(overrides) {
+  const params = Object.assign({ type: currentType, q: currentQuery, category: currentCategory }, overrides);
+  const parts = [];
+  if (params.type) parts.push('type=' + encodeURIComponent(params.type));
+  if (params.q) parts.push('q=' + encodeURIComponent(params.q));
+  if (params.category) parts.push('category=' + encodeURIComponent(params.category));
+  return parts.length ? '/?' + parts.join('&') : '/';
+}
+%>
+<%- include('partials/header', { title: 'The Library' }) %>
+
+<h1>The Library</h1>
+<p class="subtitle">Books and games available to borrow. Click one to request it.</p>
+
+<form action="/" method="GET" class="search-form">
+  <input type="search" name="q" value="<%= currentQuery %>" placeholder="Search titles&hellip;" />
+  <% if (currentType) { %><input type="hidden" name="type" value="<%= currentType %>" /><% } %>
+  <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>" /><% } %>
+  <button type="submit">Search</button>
+</form>
+
+<div class="filter-bar">
+  <a href="<%= buildQuery({ type: null, category: null }) %>" class="<%= !currentType ? 'active' : '' %>">All</a>
+  <% Object.keys(ITEM_TYPES).forEach(function(t) { %>
+    <a href="<%= buildQuery({ type: t, category: null }) %>" class="<%= currentType === t ? 'active' : '' %>"><%= ITEM_TYPES[t].label %>s</a>
+  <% }); %>
+</div>
+
+<% if (availableCategories.length > 0) { %>
+  <div class="filter-bar filter-bar-secondary">
+    <a href="<%= buildQuery({ category: null }) %>" class="<%= !currentCategory ? 'active' : '' %>">All categories</a>
+    <% availableCategories.forEach(function(c) { %>
+      <a href="<%= buildQuery({ category: c }) %>" class="<%= currentCategory === c ? 'active' : '' %>"><%= c %></a>
+    <% }); %>
+  </div>
+<% } %>
+
+<% if (items.length === 0) { %>
+  <p><%= currentQuery || currentType || currentCategory ? 'No items match your search.' : 'Nothing here yet.' %></p>
+<% } %>
+
+<div class="item-grid">
+  <% items.forEach(function(item) { %>
+    <a class="item-card" href="/items/<%= item.id %>">
+      <% if (item.coverUrl) { %>
+        <img class="item-cover" src="<%= item.coverUrl %>" alt="<%= item.title %>" />
+      <% } else { %>
+        <div class="item-cover item-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
+      <% } %>
+      <div class="item-card-body">
+        <h3><%= item.title %></h3>
+        <% if (item.author) { %><p class="item-card-author"><%= item.author %></p><% } %>
+        <span class="badge badge-<%= item.status.state.toLowerCase() %>">
+          <% if (item.status.state === 'AVAILABLE') { %>
+            In Library
+          <% } else if (item.status.state === 'REQUESTED') { %>
+            Requested by <%= item.status.pendingRequest.requesterName %>
+          <% } else { %>
+            Rented by <%= item.status.activeLoan.borrowerName %>
+            <% if (item.status.isOverdue) { %> &middot; overdue<% } %>
+          <% } %>
+        </span>
+      </div>
+    </a>
+  <% }); %>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// type: "BOOK" | "BOARD_GAME" — see src/lib/itemTypes.js
+// status: "PENDING" | "APPROVED" | "REJECTED"
+// Plain strings (not native enums) so the same schema works on SQLite (local dev) and Postgres (prod).
+
+model Item {
+  id        Int       @id @default(autoincrement())
+  title     String
+  type      String
+  category  String?
+  author    String?
+  notes     String?
+  coverUrl  String?
+  createdAt DateTime  @default(now())
+  requests  Request[]
+  loans     Loan[]
+}
+
+model Request {
+  id            Int      @id @default(autoincrement())
+  itemId        Int
+  item          Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  requesterName String
+  requestedAt   DateTime @default(now())
+  status        String   @default("PENDING")
+
+  @@index([itemId])
+}
+
+model Loan {
+  id           Int       @id @default(autoincrement())
+  itemId       Int
+  item         Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  borrowerName String
+  rentedOn     DateTime  @default(now())
+  dueBack      DateTime?
+  returnedOn   DateTime?
+
+  @@index([itemId])
+}

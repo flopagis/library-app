@@ -1,0 +1,62 @@
+<%- include('partials/header', { title: item.title + ' - The Library' }) %>
+
+<a class="back-link" href="/">&larr; Back to catalog</a>
+
+<div class="item-detail">
+  <% if (item.coverUrl) { %>
+    <img class="item-cover-large" src="<%= item.coverUrl %>" alt="<%= item.title %>" />
+  <% } else { %>
+    <div class="item-cover-large item-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
+  <% } %>
+
+  <div>
+    <h1><%= item.title %></h1>
+    <% if (item.author) { %><p class="item-author"><%= item.author %></p><% } %>
+    <p class="item-type"><%= ITEM_TYPES[item.type].label %><%= item.category ? ' · ' + item.category : '' %></p>
+    <% if (item.notes) { %><p class="item-notes"><%= item.notes %></p><% } %>
+
+    <span class="badge badge-<%= item.status.state.toLowerCase() %>">
+      <% if (item.status.state === 'AVAILABLE') { %>
+        In Library
+      <% } else if (item.status.state === 'REQUESTED') { %>
+        Requested by <%= item.status.pendingRequest.requesterName %>
+      <% } else { %>
+        Rented by <%= item.status.activeLoan.borrowerName %>
+        &middot; out <%= item.status.durationDays %> day<%= item.status.durationDays === 1 ? '' : 's' %>
+        <% if (item.status.activeLoan.dueBack) { %>
+          &middot; due <%= item.status.activeLoan.dueBack.toDateString() %>
+        <% } %>
+        <% if (item.status.isOverdue) { %> &middot; overdue<% } %>
+      <% } %>
+    </span>
+
+    <% if (item.status.state === 'AVAILABLE') { %>
+      <form action="/items/<%= item.id %>/request" method="POST" class="request-form">
+        <label for="requesterName">Your name</label>
+        <input type="text" id="requesterName" name="requesterName" required maxlength="80" placeholder="e.g. Sam" />
+        <button type="submit">Request this</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<% if (item.loans.length > 0) { %>
+  <h2>History</h2>
+  <table class="history-table">
+    <thead>
+      <tr><th>Borrower</th><th>Rented on</th><th>Due back</th><th>Returned on</th></tr>
+    </thead>
+    <tbody>
+      <% item.loans.forEach(function(loan) { %>
+        <tr>
+          <td><%= loan.borrowerName %></td>
+          <td><%= loan.rentedOn.toDateString() %></td>
+          <td><%= loan.dueBack ? loan.dueBack.toDateString() : '—' %></td>
+          <td><%= loan.returnedOn ? loan.returnedOn.toDateString() : 'still out' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/footer') %>

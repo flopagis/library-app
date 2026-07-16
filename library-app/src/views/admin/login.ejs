@@ -1,0 +1,11 @@
+<%- include('../partials/header', { title: 'Admin login' }) %>
+
+<h1>Admin login</h1>
+
+<form action="/admin/login" method="POST" class="admin-form">
+  <label for="password">Password</label>
+  <input type="password" id="password" name="password" required autofocus />
+  <button type="submit">Log in</button>
+</form>
+
+<%- include('../partials/footer') %>
