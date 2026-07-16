@@ -1,6 +1,6 @@
 const ITEM_TYPES = {
-  BOOK: { label: "Book", emoji: "📖" },
-  BOARD_GAME: { label: "Board Game", emoji: "🎲" },
+  BOOK: { label: "Book", emoji: "📖", externalLabel: "Goodreads" },
+  BOARD_GAME: { label: "Board Game", emoji: "🎲", externalLabel: "BoardGameGeek" },
 };
 
 function isValidItemType(type) {

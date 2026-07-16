@@ -25,6 +25,9 @@
     <% existingCategories.forEach(function(c) { %><option value="<%= c %>"></option><% }); %>
   </datalist>
 
+  <label for="externalUrl">Goodreads / BoardGameGeek link (optional)</label>
+  <input type="url" id="externalUrl" name="externalUrl" placeholder="https://..." value="<%= item && item.externalUrl ? item.externalUrl : '' %>" />
+
   <label for="coverUrl">Cover image URL (optional)</label>
   <input type="url" id="coverUrl" name="coverUrl" value="<%= item && item.coverUrl ? item.coverUrl : '' %>" />
 

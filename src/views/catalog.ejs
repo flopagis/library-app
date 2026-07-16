@@ -44,18 +44,19 @@ function buildQuery(overrides) {
   <% items.forEach(function(item) { %>
     <a class="item-card" href="/items/<%= item.id %>">
       <% if (item.coverUrl) { %>
-        <img class="item-cover" src="<%= item.coverUrl %>" alt="<%= item.title %>" />
+        <div class="cover-wrap">
+          <div class="cover-spinner"></div>
+          <img class="item-cover" src="<%= coverUrlForSize(item.coverUrl, 'M') %>" alt="<%= item.title %>" onload="this.classList.add('loaded')" />
+        </div>
       <% } else { %>
         <div class="item-cover item-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
       <% } %>
       <div class="item-card-body">
         <h3><%= item.title %></h3>
         <% if (item.author) { %><p class="item-card-author"><%= item.author %></p><% } %>
-        <span class="badge badge-<%= item.status.state.toLowerCase() %>">
-          <% if (item.status.state === 'AVAILABLE') { %>
+        <span class="badge badge-<%= item.status.isPubliclyAvailable ? 'available' : 'rented' %>">
+          <% if (item.status.isPubliclyAvailable) { %>
             In Library
-          <% } else if (item.status.state === 'REQUESTED') { %>
-            Requested by <%= item.status.pendingRequest.requesterName %>
           <% } else { %>
             Rented by <%= item.status.activeLoan.borrowerName %>
             <% if (item.status.isOverdue) { %> &middot; overdue<% } %>

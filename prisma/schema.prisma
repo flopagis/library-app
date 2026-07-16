@@ -17,6 +17,7 @@ model Item {
   type      String
   category  String?
   author    String?
+  externalUrl String? // Goodreads link for books, BoardGameGeek link for board games
   notes     String?
   coverUrl  String?
   createdAt DateTime  @default(now())

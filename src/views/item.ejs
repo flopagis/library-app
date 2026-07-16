@@ -4,7 +4,10 @@
 
 <div class="item-detail">
   <% if (item.coverUrl) { %>
-    <img class="item-cover-large" src="<%= item.coverUrl %>" alt="<%= item.title %>" />
+    <div class="cover-wrap cover-wrap-large">
+      <div class="cover-spinner"></div>
+      <img class="item-cover-large" src="<%= item.coverUrl %>" alt="<%= item.title %>" onload="this.classList.add('loaded')" />
+    </div>
   <% } else { %>
     <div class="item-cover-large item-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
   <% } %>
@@ -13,13 +16,14 @@
     <h1><%= item.title %></h1>
     <% if (item.author) { %><p class="item-author"><%= item.author %></p><% } %>
     <p class="item-type"><%= ITEM_TYPES[item.type].label %><%= item.category ? ' · ' + item.category : '' %></p>
+    <% if (item.externalUrl) { %>
+      <p class="item-external-link"><a href="<%= item.externalUrl %>" target="_blank" rel="noopener noreferrer">View on <%= ITEM_TYPES[item.type].externalLabel %> &nearr;</a></p>
+    <% } %>
     <% if (item.notes) { %><p class="item-notes"><%= item.notes %></p><% } %>
 
-    <span class="badge badge-<%= item.status.state.toLowerCase() %>">
-      <% if (item.status.state === 'AVAILABLE') { %>
+    <span class="badge badge-<%= item.status.isPubliclyAvailable ? 'available' : 'rented' %>">
+      <% if (item.status.isPubliclyAvailable) { %>
         In Library
-      <% } else if (item.status.state === 'REQUESTED') { %>
-        Requested by <%= item.status.pendingRequest.requesterName %>
       <% } else { %>
         Rented by <%= item.status.activeLoan.borrowerName %>
         &middot; out <%= item.status.durationDays %> day<%= item.status.durationDays === 1 ? '' : 's' %>
@@ -30,7 +34,7 @@
       <% } %>
     </span>
 
-    <% if (item.status.state === 'AVAILABLE') { %>
+    <% if (item.status.isPubliclyAvailable) { %>
       <form action="/items/<%= item.id %>/request" method="POST" class="request-form">
         <label for="requesterName">Your name</label>
         <input type="text" id="requesterName" name="requesterName" required maxlength="80" placeholder="e.g. Sam" />

@@ -63,7 +63,7 @@ router.get(
       prisma.request.findMany({
         where: { status: "PENDING" },
         include: { item: true },
-        orderBy: { requestedAt: "asc" },
+        orderBy: [{ item: { title: "asc" } }, { requestedAt: "asc" }],
       }),
       prisma.loan.findMany({
         where: { returnedOn: null },
@@ -116,14 +116,21 @@ router.post(
       if (!Number.isNaN(parsed.getTime())) dueBack = parsed;
     }
 
+    const otherPendingCount = status.pendingRequests.filter((r) => r.id !== id).length;
+
     await prisma.$transaction([
       prisma.loan.create({
         data: { itemId: request.itemId, borrowerName: request.requesterName, dueBack },
       }),
       prisma.request.update({ where: { id }, data: { status: "APPROVED" } }),
+      prisma.request.updateMany({
+        where: { itemId: request.itemId, status: "PENDING", id: { not: id } },
+        data: { status: "REJECTED" },
+      }),
     ]);
 
-    req.session.flash = `Approved "${request.item.title}" for ${request.requesterName}.`;
+    req.session.flash = `Approved "${request.item.title}" for ${request.requesterName}.`
+      + (otherPendingCount > 0 ? ` (${otherPendingCount} other request${otherPendingCount === 1 ? '' : 's'} for this item declined.)` : '');
     res.redirect("/admin");
   })
 );
@@ -175,7 +182,7 @@ router.get(
 router.post(
   "/items/new",
   asyncHandler(async (req, res) => {
-    const { title, type, category, author, coverUrl, notes } = req.body;
+    const { title, type, category, author, externalUrl, coverUrl, notes } = req.body;
 
     if (!title || !title.trim() || !isValidItemType(type)) {
       req.session.error = "Title and type are required.";
@@ -188,6 +195,7 @@ router.post(
         type,
         category: category && category.trim() ? category.trim() : null,
         author: author && author.trim() ? author.trim() : null,
+        externalUrl: externalUrl && externalUrl.trim() ? externalUrl.trim() : null,
         coverUrl: coverUrl && coverUrl.trim() ? coverUrl.trim() : null,
         notes: notes && notes.trim() ? notes.trim() : null,
       },
@@ -215,7 +223,7 @@ router.post(
   "/items/:id/edit",
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const { title, type, category, author, coverUrl, notes } = req.body;
+    const { title, type, category, author, externalUrl, coverUrl, notes } = req.body;
 
     const existing = await prisma.item.findUnique({ where: { id } });
     if (!existing) return res.status(404).render("404");
@@ -232,6 +240,7 @@ router.post(
         type,
         category: category && category.trim() ? category.trim() : null,
         author: author && author.trim() ? author.trim() : null,
+        externalUrl: externalUrl && externalUrl.trim() ? externalUrl.trim() : null,
         coverUrl: coverUrl && coverUrl.trim() ? coverUrl.trim() : null,
         notes: notes && notes.trim() ? notes.trim() : null,
       },

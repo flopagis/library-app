@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const { getItemStatus } = require("../lib/itemStatus");
 const { ITEM_TYPES, isValidItemType } = require("../lib/itemTypes");
 const { matchesQuery } = require("../lib/search");
+const { coverUrlForSize } = require("../lib/coverImage");
 const asyncHandler = require("../lib/asyncHandler");
 
 const router = express.Router();
@@ -39,6 +40,7 @@ router.get("/", asyncHandler(async (req, res) => {
     currentCategory: category,
     availableCategories,
     ITEM_TYPES,
+    coverUrlForSize,
   });
 }));
 
@@ -75,7 +77,7 @@ router.post("/items/:id/request", asyncHandler(async (req, res) => {
   }
 
   const status = getItemStatus(item);
-  if (status.state !== "AVAILABLE") {
+  if (!status.isPubliclyAvailable) {
     req.session.error = "Sorry, that item isn't available anymore.";
     return res.redirect(`/items/${id}`);
   }

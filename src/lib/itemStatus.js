@@ -5,28 +5,32 @@ function daysBetween(start, end) {
 }
 
 // item must include { loans, requests }
+// Multiple people may request the same item at once — the admin picks who gets it.
+// "REQUESTED" is internal/admin-facing only; the public only ever sees AVAILABLE or RENTED
+// (isPubliclyAvailable covers both AVAILABLE and REQUESTED, since pending requests aren't shown publicly).
 function getItemStatus(item) {
   const activeLoan = item.loans.find((l) => l.returnedOn === null) || null;
-  const pendingRequest = !activeLoan
-    ? item.requests.find((r) => r.status === "PENDING") || null
-    : null;
+  const pendingRequests = !activeLoan
+    ? item.requests.filter((r) => r.status === "PENDING")
+    : [];
 
   if (activeLoan) {
     const now = new Date();
     return {
       state: "RENTED",
       activeLoan,
-      pendingRequest: null,
+      pendingRequests: [],
+      isPubliclyAvailable: false,
       durationDays: daysBetween(activeLoan.rentedOn, now),
       isOverdue: activeLoan.dueBack ? now > activeLoan.dueBack : false,
     };
   }
 
-  if (pendingRequest) {
-    return { state: "REQUESTED", activeLoan: null, pendingRequest };
+  if (pendingRequests.length > 0) {
+    return { state: "REQUESTED", activeLoan: null, pendingRequests, isPubliclyAvailable: true };
   }
 
-  return { state: "AVAILABLE", activeLoan: null, pendingRequest: null };
+  return { state: "AVAILABLE", activeLoan: null, pendingRequests: [], isPubliclyAvailable: true };
 }
 
 module.exports = { getItemStatus, daysBetween };
