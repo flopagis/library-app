@@ -17,11 +17,14 @@ router.get("/", asyncHandler(async (req, res) => {
   const type = isValidItemType(req.query.type) ? req.query.type : null;
   const q = (req.query.q || "").trim();
 
-  const items = await prisma.item.findMany({
-    where: type ? { type } : undefined,
-    include: ITEM_INCLUDE,
-    orderBy: { title: "asc" },
-  });
+  const [items, allTitles] = await Promise.all([
+    prisma.item.findMany({
+      where: type ? { type } : undefined,
+      include: ITEM_INCLUDE,
+      orderBy: { title: "asc" },
+    }),
+    prisma.item.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+  ]);
 
   const availableCategories = type
     ? [...new Set(items.map((i) => i.category).filter(Boolean))].sort()
@@ -39,6 +42,7 @@ router.get("/", asyncHandler(async (req, res) => {
     currentQuery: q,
     currentCategory: category,
     availableCategories,
+    allTitles,
     ITEM_TYPES,
     coverUrlForSize,
   });

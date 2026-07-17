@@ -13,12 +13,48 @@ function buildQuery(overrides) {
 <h1>The Library</h1>
 <p class="subtitle">Books and games available to borrow. Click one to request it.</p>
 
-<form action="/" method="GET" class="search-form">
-  <input type="search" name="q" value="<%= currentQuery %>" placeholder="Search titles&hellip;" />
-  <% if (currentType) { %><input type="hidden" name="type" value="<%= currentType %>" /><% } %>
-  <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>" /><% } %>
-  <button type="submit">Search</button>
-</form>
+<div class="search-wrap">
+  <form action="/" method="GET" class="search-form">
+    <input type="search" name="q" id="search-input" value="<%= currentQuery %>" placeholder="Search titles&hellip;" autocomplete="off" />
+    <% if (currentType) { %><input type="hidden" name="type" value="<%= currentType %>" /><% } %>
+    <% if (currentCategory) { %><input type="hidden" name="category" value="<%= currentCategory %>" /><% } %>
+    <button type="submit">Search</button>
+  </form>
+  <div id="search-suggestions" class="search-suggestions" hidden></div>
+</div>
+
+<script>
+(function () {
+  var ITEMS = <%- JSON.stringify(allTitles) %>;
+  var input = document.getElementById('search-input');
+  var box = document.getElementById('search-suggestions');
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function render() {
+    var q = input.value.trim().toLowerCase();
+    if (!q) { box.hidden = true; box.innerHTML = ''; return; }
+    var matches = ITEMS.filter(function (item) {
+      return item.title.toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 8);
+    if (matches.length === 0) { box.hidden = true; box.innerHTML = ''; return; }
+    box.innerHTML = matches.map(function (item) {
+      return '<a href="/items/' + item.id + '">' + escapeHtml(item.title) + '</a>';
+    }).join('');
+    box.hidden = false;
+  }
+
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  document.addEventListener('click', function (e) {
+    if (e.target !== input && !box.contains(e.target)) box.hidden = true;
+  });
+})();
+</script>
 
 <div class="filter-bar">
   <a href="<%= buildQuery({ type: null, category: null }) %>" class="<%= !currentType ? 'active' : '' %>">All</a>

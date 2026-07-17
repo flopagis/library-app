@@ -82,6 +82,7 @@ router.get(
       pendingRequests,
       activeLoans,
       items: itemsWithStatus,
+      allTitles: items.map((i) => ({ id: i.id, title: i.title })),
       now: new Date(),
       defaultDueBack: defaultDueBackDateString(),
       currentQuery: q,

@@ -69,10 +69,46 @@
     <h2>All items</h2>
     <a class="button" href="/admin/items/new">+ Add item</a>
   </div>
-  <form action="/admin" method="GET" class="search-form">
-    <input type="search" name="q" value="<%= currentQuery %>" placeholder="Search titles&hellip;" />
-    <button type="submit">Search</button>
-  </form>
+  <div class="search-wrap">
+    <form action="/admin" method="GET" class="search-form">
+      <input type="search" name="q" id="admin-search-input" value="<%= currentQuery %>" placeholder="Search titles&hellip;" autocomplete="off" />
+      <button type="submit">Search</button>
+    </form>
+    <div id="admin-search-suggestions" class="search-suggestions" hidden></div>
+  </div>
+
+  <script>
+  (function () {
+    var ITEMS = <%- JSON.stringify(allTitles) %>;
+    var input = document.getElementById('admin-search-input');
+    var box = document.getElementById('admin-search-suggestions');
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
+
+    function render() {
+      var q = input.value.trim().toLowerCase();
+      if (!q) { box.hidden = true; box.innerHTML = ''; return; }
+      var matches = ITEMS.filter(function (item) {
+        return item.title.toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 8);
+      if (matches.length === 0) { box.hidden = true; box.innerHTML = ''; return; }
+      box.innerHTML = matches.map(function (item) {
+        return '<a href="/admin/items/' + item.id + '/edit">' + escapeHtml(item.title) + '</a>';
+      }).join('');
+      box.hidden = false;
+    }
+
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    document.addEventListener('click', function (e) {
+      if (e.target !== input && !box.contains(e.target)) box.hidden = true;
+    });
+  })();
+  </script>
   <% if (items.length === 0) { %>
     <p class="muted"><%= currentQuery ? 'No items match your search.' : 'No items yet.' %></p>
   <% } else { %>
