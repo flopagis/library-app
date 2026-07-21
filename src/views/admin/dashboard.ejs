@@ -12,7 +12,7 @@
       <tbody>
         <% pendingRequests.forEach(function(r) { %>
           <tr>
-            <td><a href="/items/<%= r.item.id %>"><%= r.item.title %></a></td>
+            <td><a class="button button-small" href="/items/<%= r.item.id %>"><%= r.item.title %></a></td>
             <td><%= r.requesterName %></td>
             <td><%= r.requestedAt.toDateString() %></td>
             <td>
@@ -48,7 +48,7 @@
       <tbody>
         <% activeLoans.forEach(function(l) { %>
           <tr class="<%= l.dueBack && l.dueBack < now ? 'row-overdue' : '' %>">
-            <td><a href="/items/<%= l.item.id %>"><%= l.item.title %></a></td>
+            <td><a class="button button-small" href="/items/<%= l.item.id %>"><%= l.item.title %></a></td>
             <td><%= l.borrowerName %></td>
             <td><%= l.rentedOn.toDateString() %></td>
             <td><%= l.dueBack ? l.dueBack.toDateString() : '—' %></td>
@@ -113,11 +113,18 @@
     <p class="muted"><%= currentQuery ? 'No items match your search.' : 'No items yet.' %></p>
   <% } else { %>
   <table class="admin-table">
-    <thead><tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th></th><th></th></tr></thead>
+    <thead><tr><th></th><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th></th><th></th></tr></thead>
     <tbody>
       <% items.forEach(function(item) { %>
         <tr>
-          <td><a href="/items/<%= item.id %>"><%= item.title %></a></td>
+          <td class="admin-cover-cell">
+            <% if (item.coverUrl) { %>
+              <img class="admin-cover-thumb" src="<%= coverUrlForSize(item.coverUrl, 'S') %>" alt="" />
+            <% } else { %>
+              <div class="admin-cover-thumb admin-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
+            <% } %>
+          </td>
+          <td><a class="button button-small" href="/items/<%= item.id %>"><%= item.title %></a></td>
           <td><%= ITEM_TYPES[item.type].label %></td>
           <td><%= item.category || '—' %></td>
           <td>
@@ -127,7 +134,7 @@
               <% } else { %>Rented<% } %>
             </span>
           </td>
-          <td><a href="/admin/items/<%= item.id %>/edit">Edit</a></td>
+          <td><a class="button button-small" href="/admin/items/<%= item.id %>/edit">Edit</a></td>
           <td>
             <form action="/admin/items/<%= item.id %>/delete" method="POST" class="inline-form"
                   onsubmit="return confirm('Delete this item?');">

@@ -5,6 +5,7 @@ const requireAdmin = require("../middleware/requireAdmin");
 const { getItemStatus } = require("../lib/itemStatus");
 const { ITEM_TYPES, isValidItemType } = require("../lib/itemTypes");
 const { matchesQuery } = require("../lib/search");
+const { coverUrlForSize } = require("../lib/coverImage");
 const asyncHandler = require("../lib/asyncHandler");
 
 const router = express.Router();
@@ -87,6 +88,7 @@ router.get(
       defaultDueBack: defaultDueBackDateString(),
       currentQuery: q,
       ITEM_TYPES,
+      coverUrlForSize,
     });
   })
 );
