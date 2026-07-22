@@ -13,39 +13,65 @@ const ITEM_INCLUDE = {
   requests: true,
 };
 
-router.get("/", asyncHandler(async (req, res) => {
-  const type = isValidItemType(req.query.type) ? req.query.type : null;
-  const q = (req.query.q || "").trim();
+const PAGE_SIZE = 15; // 3 rows of 5 on the catalog grid
 
-  const [items, allTitles] = await Promise.all([
-    prisma.item.findMany({
-      where: type ? { type } : undefined,
-      include: ITEM_INCLUDE,
-      orderBy: { title: "asc" },
-    }),
-    prisma.item.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
-  ]);
+async function getFilteredItems({ type, category, q }) {
+  const items = await prisma.item.findMany({
+    where: type ? { type } : undefined,
+    include: ITEM_INCLUDE,
+    orderBy: { title: "asc" },
+  });
 
   const availableCategories = type
     ? [...new Set(items.map((i) => i.category).filter(Boolean))].sort()
     : [];
-  const category = availableCategories.includes(req.query.category) ? req.query.category : null;
+  const resolvedCategory = availableCategories.includes(category) ? category : null;
 
-  const itemsWithStatus = items
-    .filter((item) => !category || item.category === category)
+  const filtered = items
+    .filter((item) => !resolvedCategory || item.category === resolvedCategory)
     .filter((item) => matchesQuery(item.title, q))
     .map((item) => ({ ...item, status: getItemStatus(item) }));
 
+  return { filtered, availableCategories, resolvedCategory };
+}
+
+router.get("/", asyncHandler(async (req, res) => {
+  const type = isValidItemType(req.query.type) ? req.query.type : null;
+  const q = (req.query.q || "").trim();
+
+  const [{ filtered, availableCategories, resolvedCategory }, allTitles] = await Promise.all([
+    getFilteredItems({ type, category: req.query.category, q }),
+    prisma.item.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+  ]);
+
+  const pageItems = filtered.slice(0, PAGE_SIZE);
+  const hasMore = filtered.length > PAGE_SIZE;
+
   res.render("catalog", {
-    items: itemsWithStatus,
+    items: pageItems,
+    hasMore,
     currentType: type,
     currentQuery: q,
-    currentCategory: category,
+    currentCategory: resolvedCategory,
     availableCategories,
     allTitles,
     ITEM_TYPES,
     coverUrlForSize,
   });
+}));
+
+router.get("/items-page", asyncHandler(async (req, res) => {
+  const type = isValidItemType(req.query.type) ? req.query.type : null;
+  const q = (req.query.q || "").trim();
+  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+
+  const { filtered } = await getFilteredItems({ type, category: req.query.category, q });
+  const pageItems = filtered.slice(offset, offset + PAGE_SIZE);
+  const hasMore = offset + PAGE_SIZE < filtered.length;
+
+  res.set("X-Has-More", hasMore ? "true" : "false");
+  res.set("X-Next-Offset", String(offset + pageItems.length));
+  res.render("partials/item-cards", { items: pageItems, ITEM_TYPES, coverUrlForSize });
 }));
 
 router.get("/items/:id", asyncHandler(async (req, res) => {

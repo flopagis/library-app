@@ -217,6 +217,18 @@ h1 { margin-top: 0; }
   to { transform: rotate(360deg); }
 }
 
+.load-more-spinner {
+  justify-content: center;
+  padding: 24px 0;
+}
+.load-more-spinner:not([hidden]) {
+  display: flex;
+}
+.load-more-spinner .cover-spinner::after {
+  width: 28px;
+  height: 28px;
+}
+
 .item-card-body { padding: 12px; }
 .item-card-body h3 { margin: 0; font-size: 1rem; }
 .item-card-author { margin: 2px 0 8px; font-size: 0.82rem; color: var(--muted); }

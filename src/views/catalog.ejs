@@ -76,31 +76,53 @@ function buildQuery(overrides) {
   <p><%= currentQuery || currentType || currentCategory ? 'No items match your search.' : 'Nothing here yet.' %></p>
 <% } %>
 
-<div class="item-grid">
-  <% items.forEach(function(item) { %>
-    <a class="item-card" href="/items/<%= item.id %>">
-      <% if (item.coverUrl) { %>
-        <div class="cover-wrap">
-          <div class="cover-spinner"></div>
-          <img class="item-cover" src="<%= coverUrlForSize(item.coverUrl, 'M') %>" alt="<%= item.title %>" onload="this.classList.add('loaded')" />
-        </div>
-      <% } else { %>
-        <div class="item-cover item-cover-placeholder"><%= ITEM_TYPES[item.type].emoji %></div>
-      <% } %>
-      <div class="item-card-body">
-        <h3><%= item.title %></h3>
-        <% if (item.author) { %><p class="item-card-author"><%= item.author %></p><% } %>
-        <span class="badge badge-<%= item.status.isPubliclyAvailable ? 'available' : 'rented' %>">
-          <% if (item.status.isPubliclyAvailable) { %>
-            In Library
-          <% } else { %>
-            Rented by <%= item.status.activeLoan.borrowerName %>
-            <% if (item.status.isOverdue) { %> &middot; overdue<% } %>
-          <% } %>
-        </span>
-      </div>
-    </a>
-  <% }); %>
+<div class="item-grid" id="item-grid">
+  <%- include('partials/item-cards', { items: items, ITEM_TYPES: ITEM_TYPES, coverUrlForSize: coverUrlForSize }) %>
 </div>
+
+<div id="load-more-trigger" data-offset="<%= items.length %>" data-has-more="<%= hasMore ? '1' : '0' %>"></div>
+<div id="load-more-spinner" class="load-more-spinner" hidden><div class="cover-spinner" style="position: static;"></div></div>
+
+<script>
+(function () {
+  var trigger = document.getElementById('load-more-trigger');
+  var spinner = document.getElementById('load-more-spinner');
+  var grid = document.getElementById('item-grid');
+  var loading = false;
+
+  function loadMore() {
+    if (loading || trigger.dataset.hasMore !== '1') return;
+    loading = true;
+    spinner.hidden = false;
+
+    var params = new URLSearchParams(window.location.search);
+    params.set('offset', trigger.dataset.offset);
+
+    fetch('/items-page?' + params.toString())
+      .then(function (res) {
+        return res.text().then(function (html) {
+          return { html: html, hasMore: res.headers.get('X-Has-More') === 'true', nextOffset: res.headers.get('X-Next-Offset') };
+        });
+      })
+      .then(function (data) {
+        grid.insertAdjacentHTML('beforeend', data.html);
+        trigger.dataset.offset = data.nextOffset;
+        trigger.dataset.hasMore = data.hasMore ? '1' : '0';
+        loading = false;
+        spinner.hidden = true;
+        if (!data.hasMore) observer.disconnect();
+      })
+      .catch(function () { loading = false; spinner.hidden = true; });
+  }
+
+  var observer;
+  if (trigger.dataset.hasMore === '1' && 'IntersectionObserver' in window) {
+    observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { if (entry.isIntersecting) loadMore(); });
+    }, { rootMargin: '600px' });
+    observer.observe(trigger);
+  }
+})();
+</script>
 
 <%- include('partials/footer') %>
