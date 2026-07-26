@@ -19,7 +19,7 @@
       <% } %>
     </nav>
   </header>
-  <main class="container">
+  <main class="container<%= typeof wide !== "undefined" && wide ? " container-wide" : "" %>">
     <% if (typeof flash !== "undefined" && flash) { %>
       <div class="flash"><%= flash %></div>
     <% } %>

@@ -85,7 +85,7 @@ router.get("/items/:id", asyncHandler(async (req, res) => {
 
   if (!item) return res.status(404).render("404");
 
-  res.render("item", { item: { ...item, status: getItemStatus(item) }, ITEM_TYPES });
+  res.render("item", { item: { ...item, status: getItemStatus(item) }, ITEM_TYPES, wide: true });
 }));
 
 router.post("/items/:id/request", asyncHandler(async (req, res) => {
