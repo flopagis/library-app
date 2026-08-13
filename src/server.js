@@ -35,6 +35,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/healthz", (req, res) => res.status(200).send("ok"));
+
 app.use("/", catalogRoutes);
 app.use("/admin", adminRoutes);
 
