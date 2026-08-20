@@ -148,9 +148,9 @@ h1 { margin-top: 0; }
   gap: 18px;
 }
 @media (max-width: 700px) {
-  .item-grid { grid-template-columns: repeat(2, 1fr); }
+  .item-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
-@media (max-width: 420px) {
+@media (max-width: 340px) {
   .item-grid { grid-template-columns: 1fr; }
 }
 

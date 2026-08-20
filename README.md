@@ -1,4 +1,4 @@
-# The Library
+# Beautiful Leaf Library
 
 A small website for lending your books and games to friends. Friends browse the catalog and request an item by typing their name; you (the admin) approve or reject requests and mark things returned from an admin dashboard.
 
