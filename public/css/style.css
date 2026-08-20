@@ -257,6 +257,11 @@ h1 { margin-top: 0; }
   .item-detail {
     grid-template-columns: 1fr;
   }
+  .item-detail .cover-wrap-large,
+  .item-detail > .item-cover-large {
+    max-width: 200px;
+    margin: 0 auto;
+  }
 }
 .item-cover-large {
   width: 100%;
