@@ -14,6 +14,7 @@ const ITEM_INCLUDE = {
 };
 
 const PAGE_SIZE = 15; // 3 rows of 5 on the catalog grid
+const MAX_PAGE_LIMIT = 1000;
 
 async function getFilteredItems({ type, category, q }) {
   const items = await prisma.item.findMany({
@@ -64,10 +65,12 @@ router.get("/items-page", asyncHandler(async (req, res) => {
   const type = isValidItemType(req.query.type) ? req.query.type : null;
   const q = (req.query.q || "").trim();
   const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+  // A larger limit lets the catalog re-load everything the visitor had scrolled through when they come back from an item page.
+  const limit = Math.min(MAX_PAGE_LIMIT, Math.max(1, parseInt(req.query.limit, 10) || PAGE_SIZE));
 
   const { filtered } = await getFilteredItems({ type, category: req.query.category, q });
-  const pageItems = filtered.slice(offset, offset + PAGE_SIZE);
-  const hasMore = offset + PAGE_SIZE < filtered.length;
+  const pageItems = filtered.slice(offset, offset + limit);
+  const hasMore = offset + limit < filtered.length;
 
   res.set("X-Has-More", hasMore ? "true" : "false");
   res.set("X-Next-Offset", String(offset + pageItems.length));

@@ -88,38 +88,91 @@ function buildQuery(overrides) {
   var spinner = document.getElementById('load-more-spinner');
   var grid = document.getElementById('item-grid');
   var loading = false;
+  var observer;
+
+  var STATE_KEY = 'catalog-scroll:' + window.location.pathname + window.location.search;
+
+  function fetchPage(limit) {
+    var params = new URLSearchParams(window.location.search);
+    params.set('offset', trigger.dataset.offset);
+    if (limit) params.set('limit', limit);
+    return fetch('/items-page?' + params.toString()).then(function (res) {
+      return res.text().then(function (html) {
+        return { html: html, hasMore: res.headers.get('X-Has-More') === 'true', nextOffset: res.headers.get('X-Next-Offset') };
+      });
+    });
+  }
+
+  function appendPage(data) {
+    grid.insertAdjacentHTML('beforeend', data.html);
+    trigger.dataset.offset = data.nextOffset;
+    trigger.dataset.hasMore = data.hasMore ? '1' : '0';
+    if (!data.hasMore && observer) observer.disconnect();
+  }
 
   function loadMore() {
     if (loading || trigger.dataset.hasMore !== '1') return;
     loading = true;
     spinner.hidden = false;
 
-    var params = new URLSearchParams(window.location.search);
-    params.set('offset', trigger.dataset.offset);
-
-    fetch('/items-page?' + params.toString())
-      .then(function (res) {
-        return res.text().then(function (html) {
-          return { html: html, hasMore: res.headers.get('X-Has-More') === 'true', nextOffset: res.headers.get('X-Next-Offset') };
-        });
-      })
+    fetchPage()
       .then(function (data) {
-        grid.insertAdjacentHTML('beforeend', data.html);
-        trigger.dataset.offset = data.nextOffset;
-        trigger.dataset.hasMore = data.hasMore ? '1' : '0';
+        appendPage(data);
         loading = false;
         spinner.hidden = true;
-        if (!data.hasMore) observer.disconnect();
       })
       .catch(function () { loading = false; spinner.hidden = true; });
   }
 
-  var observer;
-  if (trigger.dataset.hasMore === '1' && 'IntersectionObserver' in window) {
-    observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) { if (entry.isIntersecting) loadMore(); });
-    }, { rootMargin: '600px' });
-    observer.observe(trigger);
+  // Remember how far the visitor scrolled and how many items were loaded, so coming back from an item page puts them where they were.
+  function saveState() {
+    try {
+      sessionStorage.setItem(STATE_KEY, JSON.stringify({ y: window.scrollY, offset: parseInt(trigger.dataset.offset, 10) || 0 }));
+      sessionStorage.setItem('catalog-last-url', window.location.pathname + window.location.search);
+    } catch (e) {}
+  }
+  window.addEventListener('pagehide', saveState);
+
+  function readState() {
+    try { return JSON.parse(sessionStorage.getItem(STATE_KEY)); } catch (e) { return null; }
+  }
+
+  function shouldRestore() {
+    var flagged = false;
+    try {
+      flagged = sessionStorage.getItem('catalog-restore') === '1';
+      sessionStorage.removeItem('catalog-restore');
+    } catch (e) {}
+    var nav = window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    return flagged || (nav && nav.type === 'back_forward');
+  }
+
+  function startObserver() {
+    if (trigger.dataset.hasMore === '1' && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { if (entry.isIntersecting) loadMore(); });
+      }, { rootMargin: '600px' });
+      observer.observe(trigger);
+    }
+  }
+
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  var saved = shouldRestore() ? readState() : null;
+  if (saved && saved.y > 0) {
+    loading = true;
+    var current = parseInt(trigger.dataset.offset, 10) || 0;
+    var missing = saved.offset - current;
+    var restored = missing > 0 && trigger.dataset.hasMore === '1' ? fetchPage(missing).then(appendPage) : Promise.resolve();
+    restored
+      .catch(function () {})
+      .then(function () {
+        window.scrollTo(0, saved.y);
+        loading = false;
+        startObserver();
+      });
+  } else {
+    startObserver();
   }
 })();
 </script>

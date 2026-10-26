@@ -1,6 +1,18 @@
 <%- include('partials/header', { title: item.title + ' - Beautiful Leaf Library' }) %>
 
-<a class="back-link" href="/">&larr; Back to catalog</a>
+<a class="back-link" id="back-link" href="/">&larr; Back to catalog</a>
+<script>
+(function () {
+  var link = document.getElementById('back-link');
+  try {
+    var last = sessionStorage.getItem('catalog-last-url');
+    if (last && last.charAt(0) === '/' && last.charAt(1) !== '/') link.setAttribute('href', last);
+    link.addEventListener('click', function () {
+      try { sessionStorage.setItem('catalog-restore', '1'); } catch (e) {}
+    });
+  } catch (e) {}
+})();
+</script>
 
 <div class="item-detail">
   <% if (item.coverUrl) { %>
