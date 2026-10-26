@@ -34,6 +34,9 @@ body {
   max-width: 1240px;
 }
 
+/* Set by the catalog page while it restores the scroll position after returning from an item page. */
+html.restoring-scroll main { visibility: hidden; }
+
 .site-header {
   display: flex;
   justify-content: space-between;
